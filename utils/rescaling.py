@@ -43,12 +43,12 @@ def downscale(in_ds, target_ds, lon_min, lon_max, lon_dim, lat_min, lat_max, lat
         newlon = np.arange(lon_min, new_lon_max, new_lon_dim)
         newlat = np.arange(lat_min, new_lat_max, new_lat_dim)
         newvar = fun(newlon, newlat)
-        target_ds.TOT_PR.loc[dict(time = time[0])] = newvar
+        target_ds.TOT_PR.loc[dict(time = time[j])] = newvar
         
         # Relative humidity interpolation
         fun = interpolate.interp2d(lon, lat, part_ds.RELHUM_2M, kind=interp_type)
         newlon = np.arange(lon_min, new_lon_max, new_lon_dim)
         newlat = np.arange(lat_min, new_lat_max, new_lat_dim)
         newvar = fun(newlon, newlat)
-        target_ds.RELHUM_2M.loc[dict(time = time[0])] = newvar        
+        target_ds.RELHUM_2M.loc[dict(time = time[j])] = newvar        
     return target_ds

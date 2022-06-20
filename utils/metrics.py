@@ -4,6 +4,7 @@ import xarray as xr
 import skimage
 from skimage.metrics import structural_similarity as ssim
 from skimage.metrics import mean_squared_error
+from xhistogram.xarray import histogram
 
 def SSIM(ds1, ds2) :
     Coordinates = {
@@ -35,18 +36,15 @@ def Hellinger(ds1, ds2) :
     TOT_PR = [0]*len(ds1.time)
     RELHUM_2M = [0]*len(ds1.time)
     for k in range(len(ds1.time)) :
-        Sum_T = 0
-        Sum_PR = 0
-        Sum_HUM = 0
-        for i in range(len(ds1.rlon)) :
-            for j in range(len(ds1.rlat)) :
-                Sum_T += (math.sqrt(ds1.T_2M.isel(time = k).values[i][j]) - math.sqrt(ds2.T_2M.isel(time = k).values[i][j]))**2
-                Sum_PR += (math.sqrt(ds1.TOT_PR.isel(time = k).values[i][j]) - math.sqrt(ds2.TOT_PR.isel(time = k).values[i][j]))**2
-                Sum_HUM += (math.sqrt(ds1.RELHUM_2M.isel(time = k).values[i][j]) - math.sqrt(ds2.RELHUM_2M.isel(time = k).values[i][j]))**2
-        T_2M[k] = math.sqrt(Sum_T)*1/math.sqrt(2)
-        RELHUM_2M[k] = math.sqrt(Sum_HUM)*1/math.sqrt(2)
-        TOT_PR[k] = math.sqrt(Sum_PR)*1/math.sqrt(2)
-                
+        Array_T = []
+        Array_PR = []
+        Array_HUM = []
+        Array_T = np.square(np.sqrt(ds1.T_2M.isel(time = k).values) - np.sqrt(ds2.T_2M.isel(time = k).values))
+        Array_PR = np.square(np.sqrt(ds1.TOT_PR.isel(time = k).values) - np.sqrt(ds2.TOT_PR.isel(time = k).values))
+        Array_HUM = np.square(np.sqrt(ds1.RELHUM_2M.isel(time = k).values) - np.sqrt(ds2.RELHUM_2M.isel(time = k).values))
+        T_2M[k] = math.sqrt(np.sum(Array_T))*1/math.sqrt(2)
+        RELHUM_2M[k] = math.sqrt(np.sum(Array_HUM))*1/math.sqrt(2)
+        TOT_PR[k] = math.sqrt(np.sum(Array_PR))*1/math.sqrt(2)
     Variables = {
         'T_2M':(['time'], T_2M),
         'RELHUM_2M':(['time'], RELHUM_2M),
@@ -54,3 +52,18 @@ def Hellinger(ds1, ds2) :
     }
     H_ds = xr.Dataset(Variables, Coordinates)
     return H_ds
+
+def Perkins(ds1, ds2) :
+    Coordinates = {
+        'time':(['time'], ds1.time.values)
+    } 
+    
+    
+    
+    Variables = {
+        'T_2M':(['time'], T_2M),
+        'RELHUM_2M':(['time'], RELHUM_2M),
+        'TOT_PR':(['time'], TOT_PR)
+    }
+    P_ds = xr.Dataset(Variables, Coordinates)
+    return P_ds

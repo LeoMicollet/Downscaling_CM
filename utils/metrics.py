@@ -4,8 +4,6 @@ import xarray as xr
 import skimage
 from skimage.metrics import structural_similarity as ssim
 from skimage.metrics import mean_squared_error
-from xhistogram.xarray import histogram
-
 def SSIM(ds1, ds2) :
     Coordinates = {
         'time':(['time'], ds1.time.values)
@@ -50,26 +48,29 @@ def discrete_Hellinger(ds1, ds2) :
     H_ds = xr.Dataset(Variables, Coordinates)
     return H_ds
 
-def Hellinger(ds1,ds2,bins) :
+def Hellinger(ds1,ds2) :
     Coordinates = {
         'time':(['time'], ds1.time.values)
     } 
-    T_2M = [0]*len(ds1.time)
-    TOT_PR = [0]*len(ds1.time)
-    RELHUM_2M = [0]*len(ds1.time)
+    T_2M = []
+    TOT_PR = []
+    RELHUM_2M = []
+    bins_T = np.linspace(270,320,3000)
+    bins_HUM = np.linspace(0,100,3000)
+    bins_PR = np.linspace(0,0.06,10000)
     
     for k in range(len(ds1.time)) :
-        pdf1, bin_out = hist(ds1.T_2M.isel(time = k).values, bins, density = True) 
-        pdf2, bin_out = hist(ds2.T_2M.isel(time = k).values, bins, density = True)
-        int_T = 1 - np.trapz(np.sqrt(np.multiply(pdf1, pdf2)),bins)
+        pdf1, bin_out = np.histogram(ds1.T_2M.isel(time = k).values, bins_T, density = True) 
+        pdf2, bin_out = np.histogram(ds2.T_2M.isel(time = k).values, bins_T, density = True)
+        int_T = 1 - np.trapz(np.sqrt(np.multiply(pdf1, pdf2)),bins_T[1:])
         
-        pdf1, bin_out = hist(ds1.TOT_PR.isel(time = k).values, bins, density = True) 
-        pdf1, bin_out = hist(ds2.TOT_PR.isel(time = k).values, bins, density = True)
-        int_PR = 1 - np.trapz(np.sqrt(np.multiply(pdf1, pdf2)),bins)
+        pdf1, bin_out = np.histogram(ds1.TOT_PR.isel(time = k).values, bins_PR, density = True) 
+        pdf2, bin_out = np.histogram(ds2.TOT_PR.isel(time = k).values, bins_PR, density = True)
+        int_PR = 1 - np.trapz(np.sqrt(np.multiply(pdf1, pdf2)),bins_PR[1:])
         
-        pdf1, bin_out = hist(ds1.TOT_PR.isel(time = k).values, bins, density = True) 
-        pdf1, bin_out = hist(ds2.TOT_PR.isel(time = k).values, bins, density = True)
-        int_HUM = 1 - np.trapz(np.sqrt(np.multiply(pdf1, pdf2)),bins)
+        pdf1, bin_out = np.histogram(ds1.RELHUM_2M.isel(time = k).values, bins_HUM, density = True) 
+        pdf2, bin_out = np.histogram(ds2.RELHUM_2M.isel(time = k).values, bins_HUM, density = True)
+        int_HUM = 1 - np.trapz(np.sqrt(np.multiply(pdf1, pdf2)),bins_HUM[1:])
         
         T_2M.append(math.sqrt(int_T))
         RELHUM_2M.append(math.sqrt(int_HUM))
@@ -87,9 +88,27 @@ def Perkins(ds1, ds2) :
     Coordinates = {
         'time':(['time'], ds1.time.values)
     } 
+        
+    T_2M = []
+    TOT_PR = []
+    RELHUM_2M = []
+    bins_T = np.linspace(270,320,3000)
+    bins_HUM = np.linspace(0,100,3000)
+    bins_PR = np.linspace(0,0.06,10000)
     
-    
-    
+    for k in range(len(ds1.time)) :
+        pdf1, bin_out = np.histogram(ds1.T_2M.isel(time = k).values, bins_T, density = True) 
+        pdf2, bin_out = np.histogram(ds2.T_2M.isel(time = k).values, bins_T, density = True)
+        T_2M.append(np.trapz(np.minimum(pdf1, pdf2), bins_T[1:]))
+        
+        pdf1, bin_out = np.histogram(ds1.TOT_PR.isel(time = k).values, bins_PR, density = True) 
+        pdf2, bin_out = np.histogram(ds2.TOT_PR.isel(time = k).values, bins_PR, density = True)
+        TOT_PR.append(np.trapz(np.minimum(pdf1, pdf2), bins_PR[1:]))
+
+        pdf1, bin_out = np.histogram(ds1.RELHUM_2M.isel(time = k).values, bins_HUM, density = True) 
+        pdf2, bin_out = np.histogram(ds2.RELHUM_2M.isel(time = k).values, bins_HUM, density = True)
+        RELHUM_2M.append(np.trapz(np.minimum(pdf1, pdf2), bins_HUM[1:]))
+        
     Variables = {
         'T_2M':(['time'], T_2M),
         'RELHUM_2M':(['time'], RELHUM_2M),

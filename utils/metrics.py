@@ -116,3 +116,7 @@ def Perkins(ds1, ds2) :
     }
     P_ds = xr.Dataset(Variables, Coordinates)
     return P_ds
+
+def multi_plot(ds_array, method) :# Here the ds array will have the first ds as the og image, and the other will be the downscaled images
+    
+        

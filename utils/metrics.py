@@ -1,9 +1,11 @@
 import numpy as np
+from matplotlib import pyplot as plt
 import math
 import xarray as xr
 import skimage
 from skimage.metrics import structural_similarity as ssim
-from skimage.metrics import mean_squared_error
+
+
 def SSIM(ds1, ds2) :
     Coordinates = {
         'time':(['time'], ds1.time.values)
@@ -24,6 +26,7 @@ def SSIM(ds1, ds2) :
     }
     SSIM_ds = xr.Dataset(Variables, Coordinates)
     return SSIM_ds
+
 
 def discrete_Hellinger(ds1, ds2) :
     Coordinates = {
@@ -47,6 +50,7 @@ def discrete_Hellinger(ds1, ds2) :
     }
     H_ds = xr.Dataset(Variables, Coordinates)
     return H_ds
+
 
 def Hellinger(ds1,ds2) :
     Coordinates = {
@@ -72,9 +76,9 @@ def Hellinger(ds1,ds2) :
         pdf2, bin_out = np.histogram(ds2.RELHUM_2M.isel(time = k).values, bins_HUM, density = True)
         int_HUM = 1 - np.trapz(np.sqrt(np.multiply(pdf1, pdf2)),bins_HUM[1:])
         
-        T_2M.append(math.sqrt(int_T))
-        RELHUM_2M.append(math.sqrt(int_HUM))
-        TOT_PR.append(math.sqrt(int_PR))
+        T_2M.append(math.sqrt(abs(int_T)))
+        RELHUM_2M.append(math.sqrt(abs(int_HUM)))
+        TOT_PR.append(math.sqrt(abs(int_PR)))
         
     Variables = {
         'T_2M':(['time'], T_2M),
@@ -83,6 +87,7 @@ def Hellinger(ds1,ds2) :
     }
     H_ds = xr.Dataset(Variables, Coordinates)
     return H_ds
+
 
 def Perkins(ds1, ds2) :
     Coordinates = {
@@ -117,6 +122,31 @@ def Perkins(ds1, ds2) :
     P_ds = xr.Dataset(Variables, Coordinates)
     return P_ds
 
-def multi_plot(ds_array, method) :# Here the ds array will have the first ds as the og image, and the other will be the downscaled images
+
+def multi_plot(ds_array, method, error) :# Here the ds array will have the first ds as the og image, and the other will be the downscaled images
+    time = ds_array[0].time.values
+    figure, axis = plt.subplots(1, 2)
     
+    for i in range(len(ds_array)) :
+        axis[0].plot(time,ds_array[i].T_2M.values, label = method[i])
+    axis[0].set_title("Temperature error " + error)
+    axis[0].legend()
+    
+    for i in range(len(ds_array)) :
+        axis[1].plot(time,ds_array[i].RELHUM_2M.values, label = method[i])
+    axis[1].set_title("Relative humidity " + error)
+    axis[1].legend()
+    
+    return 0
+
+def multi_scatterplot(ds_array, method, var1, var2):
+    l = math.ceil(len(ds_array)/2)
+    figure, axis = plt.subplots(l,2)
+    for i in range(l) :
+        ds_array[i*2].plot.scatter(var1, var2, marker='o', s = 0.7, alpha = 0.05, ax = axis[i,0])
+        axis[i,0].set_title("Scatterplot of " + var1 + " and " + var2 +", "+ method[i])
         
+        ds_array[i*2+1].plot.scatter(var1, var2, marker='o', s = 0.7, alpha = 0.05, ax = axis[i,1])
+        axis[i,1].set_title("Scatterplot of " + var1 + " and " + var2 +", "+ method[i+1])
+        
+    return 0

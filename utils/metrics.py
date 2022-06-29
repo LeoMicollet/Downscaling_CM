@@ -66,19 +66,19 @@ def Hellinger(ds1,ds2) :
     for k in range(len(ds1.time)) :
         pdf1, bin_out = np.histogram(ds1.T_2M.isel(time = k).values, bins_T, density = True) 
         pdf2, bin_out = np.histogram(ds2.T_2M.isel(time = k).values, bins_T, density = True)
-        int_T = 1 - np.trapz(np.sqrt(np.multiply(pdf1, pdf2)),bins_T[1:])
+        int_T = np.trapz(np.square(np.sqrt(pdf1) - np.sqrt(pdf2)),bins_T[1:])*1/2
         
         pdf1, bin_out = np.histogram(ds1.TOT_PR.isel(time = k).values, bins_PR, density = True) 
         pdf2, bin_out = np.histogram(ds2.TOT_PR.isel(time = k).values, bins_PR, density = True)
-        int_PR = 1 - np.trapz(np.sqrt(np.multiply(pdf1, pdf2)),bins_PR[1:])
+        int_PR = np.trapz(np.square(np.sqrt(pdf1) - np.sqrt(pdf2)),bins_PR[1:])*1/2
         
         pdf1, bin_out = np.histogram(ds1.RELHUM_2M.isel(time = k).values, bins_HUM, density = True) 
         pdf2, bin_out = np.histogram(ds2.RELHUM_2M.isel(time = k).values, bins_HUM, density = True)
-        int_HUM = 1 - np.trapz(np.sqrt(np.multiply(pdf1, pdf2)),bins_HUM[1:])
+        int_HUM = np.trapz(np.square(np.sqrt(pdf1) - np.sqrt(pdf2)),bins_HUM[1:])*1/2
         
-        T_2M.append(math.sqrt(abs(int_T)))
-        RELHUM_2M.append(math.sqrt(abs(int_HUM)))
-        TOT_PR.append(math.sqrt(abs(int_PR)))
+        T_2M.append(math.sqrt(int_T))
+        RELHUM_2M.append(math.sqrt(int_HUM))
+        TOT_PR.append(math.sqrt(int_PR))
         
     Variables = {
         'T_2M':(['time'], T_2M),
@@ -138,6 +138,7 @@ def multi_plot(ds_array, method, error) :# Here the ds array will have the first
     axis[1].legend()
     
     return 0
+
 
 def multi_scatterplot(ds_array, method, var1, var2):
     l = math.ceil(len(ds_array)/2)

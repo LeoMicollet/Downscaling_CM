@@ -4,7 +4,8 @@ import math
 import xarray as xr
 import skimage
 from skimage.metrics import structural_similarity as ssim
-
+import pandas as pd
+import seaborn as sns
 
 def SSIM(ds1, ds2) :
     Coordinates = {
@@ -121,6 +122,26 @@ def Perkins(ds1, ds2) :
     }
     P_ds = xr.Dataset(Variables, Coordinates)
     return P_ds
+
+
+def corr(ds, dim, lag) :
+    if(dim == "time") :
+        new_ds = np.array([ds.T_2M.values[i].flatten() for i in range(len(ds.T_2M))])
+        corr = np.corrcoef(new_ds)
+        corr_ds = []
+        mat= []
+        for i in range(lag+1) : 
+            for j in range(len(new_ds)-lag):
+                corr_ds.append(corr[j+i,j])
+                mat.append(i)
+
+    data = {'lag':  mat,
+    'corr': corr_ds
+    }
+
+    df = pd.DataFrame(data)
+    sns.lineplot(data=df, x="lag", y="corr")
+    return 0
 
 
 def multi_plot(ds_array, method, error) :# Here the ds array will have the first ds as the og image, and the other will be the downscaled images

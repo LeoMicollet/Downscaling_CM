@@ -124,24 +124,32 @@ def Perkins(ds1, ds2) :
     return P_ds
 
 
-def corr(ds, dim, lag) :
+def corr(ds, dim, lag, step) :
+    corr_ds = [1]
+    mat= [0]
     if(dim == "time") :
         new_ds = np.array([ds.T_2M.values[i].flatten() for i in range(len(ds.T_2M))])
         corr = np.corrcoef(new_ds)
-        corr_ds = []
-        mat= []
-        for i in range(lag+1) : 
-            for j in range(len(new_ds)-lag):
-                corr_ds.append(corr[j+i,j])
+        for i in range(1, lag+1, step) : 
+            for j in range(1, len(new_ds)-i):
+                corr_ds.append(corr[j+i, j])
                 mat.append(i)
-
+                
+    if(dim == "rlon") :
+        lag_ds = [np.array([ds.T_2M.values[i, :, j:].flatten() for i in range(len(ds.T_2M.values))]) for j in range(1, lag+1)]
+        lon_ds = [np.array([ds.T_2M.values[i, :, :-j].flatten() for i in range(len(ds.T_2M.values))]) for j in range(1, lag+1)]
+        for i in range(0, lag, step) : 
+            for j in range(len(lon_ds[i])):
+                corr_ds.append(np.corrcoef([lag_ds[i][j], lon_ds[i][j]])[0, 1])
+                mat.append(i+1)
+           
     data = {'lag':  mat,
     'corr': corr_ds
     }
 
     df = pd.DataFrame(data)
     sns.lineplot(data=df, x="lag", y="corr")
-    return 0
+    return corr_ds
 
 
 def multi_plot(ds_array, method, error) :# Here the ds array will have the first ds as the og image, and the other will be the downscaled images

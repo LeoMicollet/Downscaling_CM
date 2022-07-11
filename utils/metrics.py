@@ -2,10 +2,19 @@ import numpy as np
 from matplotlib import pyplot as plt
 import math
 import xarray as xr
+import xskillscore as xs
 import skimage
 from skimage.metrics import structural_similarity as ssim
 import pandas as pd
 import seaborn as sns
+
+def RMSE(ds1, ds2) :
+    ds = xs.rmse(ds1, ds2, dim = ['rlon','rlat'])
+    return ds
+
+def MAE(ds1, ds2) :
+    ds = xs.mae(ds1, ds2, dim = ['rlon','rlat'])
+    return ds
 
 def SSIM(ds1, ds2) :
     Coordinates = {
@@ -94,19 +103,19 @@ def Perkins(ds1, ds2) :
     Coordinates = {
         'time':(['time'], ds1.time.values)
     } 
-        
+
     T_2M = []
     TOT_PR = []
     RELHUM_2M = []
     bins_T = np.linspace(270,320,3000)
     bins_HUM = np.linspace(0,100,3000)
     bins_PR = np.linspace(0,0.06,10000)
-    
+
     for k in range(len(ds1.time)) :
         pdf1, bin_out = np.histogram(ds1.T_2M.isel(time = k).values, bins_T, density = True) 
         pdf2, bin_out = np.histogram(ds2.T_2M.isel(time = k).values, bins_T, density = True)
         T_2M.append(np.trapz(np.minimum(pdf1, pdf2), bins_T[1:]))
-        
+
         pdf1, bin_out = np.histogram(ds1.TOT_PR.isel(time = k).values, bins_PR, density = True) 
         pdf2, bin_out = np.histogram(ds2.TOT_PR.isel(time = k).values, bins_PR, density = True)
         TOT_PR.append(np.trapz(np.minimum(pdf1, pdf2), bins_PR[1:]))
@@ -114,7 +123,7 @@ def Perkins(ds1, ds2) :
         pdf1, bin_out = np.histogram(ds1.RELHUM_2M.isel(time = k).values, bins_HUM, density = True) 
         pdf2, bin_out = np.histogram(ds2.RELHUM_2M.isel(time = k).values, bins_HUM, density = True)
         RELHUM_2M.append(np.trapz(np.minimum(pdf1, pdf2), bins_HUM[1:]))
-        
+
     Variables = {
         'T_2M':(['time'], T_2M),
         'RELHUM_2M':(['time'], RELHUM_2M),
@@ -131,10 +140,13 @@ def corr(ds, dim, lag, step) :
         new_ds = np.array([ds.T_2M.values[i].flatten() for i in range(len(ds.T_2M))])
         corr = np.corrcoef(new_ds)
         for i in range(1, lag+1, step) : 
-            for j in range(1, len(new_ds)-i):
-                corr_ds.append(corr[j+i, j])
+            for j in range(1, len(new_ds)):
+                if(j < len(new_ds)-i) :
+                    corr_ds.append(corr[j+i, j])
+                else :
+                    corr_ds.append(corr[j+i-len(new_ds), j])
                 mat.append(i)
-                
+
     if(dim == "rlon") :
         lag_ds = [np.array([ds.T_2M.values[i, :, j:].flatten() for i in range(len(ds.T_2M.values))]) for j in range(1, lag+1)]
         lon_ds = [np.array([ds.T_2M.values[i, :, :-j].flatten() for i in range(len(ds.T_2M.values))]) for j in range(1, lag+1)]
@@ -142,14 +154,23 @@ def corr(ds, dim, lag, step) :
             for j in range(len(lon_ds[i])):
                 corr_ds.append(np.corrcoef([lag_ds[i][j], lon_ds[i][j]])[0, 1])
                 mat.append(i+1)
-           
+
+    if(dim == "rlat") :
+        lag_ds = [np.array([ds.T_2M.values[i, j:, :].flatten() for i in range(len(ds.T_2M.values))]) for j in range(1, lag+1)]
+        lat_ds = [np.array([ds.T_2M.values[i, :-j, :].flatten() for i in range(len(ds.T_2M.values))]) for j in range(1, lag+1)]
+       # lag_ds = [np.array([np.append(ds.T_2M.values[i, j:, :], ds.T_2M.values[i, :j, :]) for i in range(len(ds.T_2M.values))]) for j in range(1, lag+1)]
+       # lat_ds = np.array([ds.T_2M.values[i, :, :].flatten() for i in range(len(ds.T_2M.values))])
+        for i in range(0, lag, step) : 
+            for j in range(len(lon_ds[i])):
+                corr_ds.append(np.corrcoef([lag_ds[i][j], lon_ds[i][j]])[0, 1])
+                mat.append(i+1)
+                
     data = {'lag':  mat,
     'corr': corr_ds
     }
 
     df = pd.DataFrame(data)
-    sns.lineplot(data=df, x="lag", y="corr")
-    return corr_ds
+    return df
 
 
 def multi_plot(ds_array, method, error) :# Here the ds array will have the first ds as the og image, and the other will be the downscaled images

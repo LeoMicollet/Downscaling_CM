@@ -35,8 +35,50 @@ def empty_dataset(ds) : # Creates a dataset full of 0, the same shape as ds
     return empty_ds
 
 def save_dataset(ds, name) : # Saves the dataset
+    path = "/work/FAC/FGSE/IDYST/tbeucler/downscaling/Downscaling_CM/data"
+    os.chdir(path)
     filename = './'+name+'.nc'
     print ('saving to ', filename)
     ds.to_netcdf(path=filename)
     ds.close()
     print ('finished saving')
+    
+def get_training_set(filenames):
+    names = []
+    month = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12']
+    two_weeks = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12', '13', '14']
+    for m in month :
+        for d in two_weeks :
+            for name in filenames :
+                if name.startswith('lffd2003'+m+d): 
+                    names.append(name)
+    print(int(len(names)/24))
+    training_ds = new_dataset(names, 0, int(len(names)/24))
+    save_dataset(training_ds, 'training_ds')
+    return training_ds
+    
+def get_validation_set(filenames):
+    names = []
+    month = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12']
+    third_week = ['15', '16', '17', '18', '19', '20', '21']
+    for m in month :
+        for d in third_week :
+            for name in filenames :
+                if name.startswith('lffd2003'+m+d): 
+                    names.append(name)
+    validation_ds = new_dataset(names, 0, int(len(names)/24))
+    save_dataset(validation_ds, 'validation_ds')
+    return validation_ds
+    
+def get_testing_set(filenames):
+    names = []
+    month = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12']
+    last_week = ['22', '23', '24', '25', '26', '27', '28', '29','30', '31']
+    for m in month :
+        for d in last_week :
+            for name in filenames :
+                if name.startswith('lffd2003'+m+d): 
+                    names.append(name)
+    testing_ds = new_dataset(names, 0, int(len(names)/24))
+    save_dataset(testing_ds, 'testing_ds')
+    return testing_ds

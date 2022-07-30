@@ -62,74 +62,90 @@ def discrete_Hellinger(ds1, ds2) :
     return H_ds
 
 
-def Hellinger(ds1,ds2) :
-    Coordinates = {
-        'time':(['time'], ds1.time.values)
-    } 
-    T_2M = []
-    TOT_PR = []
-    RELHUM_2M = []
-    bins_T = np.linspace(270,320,3000)
-    bins_HUM = np.linspace(0,100,3000)
-    bins_PR = np.linspace(0,0.06,10000)
+def Hellinger(ds1,ds2, type, bins) :
+    if(type == "array"):
+    #    pdf1, bin_out = np.histogram(ds1, bins, density = True) 
+    #    pdf2, bin_out = np.histogram(ds2, bins, density = True)
+        x = np.square(np.sqrt(ds1) - np.sqrt(ds2))
+        H_ds = math.sqrt(np.trapz(x,bins)*1/2)
     
-    for k in range(len(ds1.time)) :
-        pdf1, bin_out = np.histogram(ds1.T_2M.isel(time = k).values, bins_T, density = True) 
-        pdf2, bin_out = np.histogram(ds2.T_2M.isel(time = k).values, bins_T, density = True)
-        int_T = np.trapz(np.square(np.sqrt(pdf1) - np.sqrt(pdf2)),bins_T[1:])*1/2
+    if(type == "xarray"):
+        Coordinates = {
+            'time':(['time'], ds1.time.values)
+        } 
+        T_2M = []
+        TOT_PR = []
+        RELHUM_2M = []
+        bins_T = np.linspace(270,320,3000)
+        bins_HUM = np.linspace(0,100,3000)
+        bins_PR = np.linspace(0,0.06,10000)
         
-        pdf1, bin_out = np.histogram(ds1.TOT_PR.isel(time = k).values, bins_PR, density = True) 
-        pdf2, bin_out = np.histogram(ds2.TOT_PR.isel(time = k).values, bins_PR, density = True)
-        int_PR = np.trapz(np.square(np.sqrt(pdf1) - np.sqrt(pdf2)),bins_PR[1:])*1/2
-        
-        pdf1, bin_out = np.histogram(ds1.RELHUM_2M.isel(time = k).values, bins_HUM, density = True) 
-        pdf2, bin_out = np.histogram(ds2.RELHUM_2M.isel(time = k).values, bins_HUM, density = True)
-        int_HUM = np.trapz(np.square(np.sqrt(pdf1) - np.sqrt(pdf2)),bins_HUM[1:])*1/2
-        
-        T_2M.append(math.sqrt(int_T))
-        RELHUM_2M.append(math.sqrt(int_HUM))
-        TOT_PR.append(math.sqrt(int_PR))
-        
-    Variables = {
-        'T_2M':(['time'], T_2M),
-        'RELHUM_2M':(['time'], RELHUM_2M),
-        'TOT_PR':(['time'], TOT_PR)
-    }
-    H_ds = xr.Dataset(Variables, Coordinates)
+        for k in range(len(ds1.time)) :
+            pdf1, bin_out = np.histogram(ds1.T_2M.isel(time = k).values, bins_T, density = True) 
+            pdf2, bin_out = np.histogram(ds2.T_2M.isel(time = k).values, bins_T, density = True)
+            int_T = np.trapz(np.square(np.sqrt(pdf1) - np.sqrt(pdf2)),bins_T[1:])*1/2
+            
+            pdf1, bin_out = np.histogram(ds1.TOT_PR.isel(time = k).values, bins_PR, density = True) 
+            pdf2, bin_out = np.histogram(ds2.TOT_PR.isel(time = k).values, bins_PR, density = True)
+            int_PR = np.trapz(np.square(np.sqrt(pdf1) - np.sqrt(pdf2)),bins_PR[1:])*1/2
+            
+            pdf1, bin_out = np.histogram(ds1.RELHUM_2M.isel(time = k).values, bins_HUM, density = True) 
+            pdf2, bin_out = np.histogram(ds2.RELHUM_2M.isel(time = k).values, bins_HUM, density = True)
+            int_HUM = np.trapz(np.square(np.sqrt(pdf1) - np.sqrt(pdf2)),bins_HUM[1:])*1/2
+            
+            T_2M.append(math.sqrt(int_T))
+            RELHUM_2M.append(math.sqrt(int_HUM))
+            TOT_PR.append(math.sqrt(int_PR))
+            
+        Variables = {
+            'T_2M':(['time'], T_2M),
+            'RELHUM_2M':(['time'], RELHUM_2M),
+            'TOT_PR':(['time'], TOT_PR)
+        }
+        H_ds = xr.Dataset(Variables, Coordinates)
     return H_ds
 
 
-def Perkins(ds1, ds2) :
-    Coordinates = {
-        'time':(['time'], ds1.time.values)
-    } 
+def Perkins(ds1, ds2, type, bins) :
+    if(type == "array"):
+        norm_ds1 = ds1/np.trapz(ds1, bins)
+        norm_ds2 = ds2/np.trapz(ds1, bins)
+   #     pdf1, bin_out = np.histogram(ds1, bins, density = True) 
+   #     pdf2, bin_out = np.histogram(ds2, bins, density = True)
+        P_ds = np.trapz(np.minimum(norm_ds1, norm_ds2), bins)
+        
+        
+    if(type == "xarray"):
+        Coordinates = {
+            'time':(['time'], ds1.time.values)
+        } 
 
-    T_2M = []
-    TOT_PR = []
-    RELHUM_2M = []
-    bins_T = np.linspace(270,320,3000)
-    bins_HUM = np.linspace(0,100,3000)
-    bins_PR = np.linspace(0,0.06,10000)
+        T_2M = []
+        TOT_PR = []
+        RELHUM_2M = []
+        bins_T = np.linspace(270,320,3000)
+        bins_HUM = np.linspace(0,100,3000)
+        bins_PR = np.linspace(0,0.06,10000)
 
-    for k in range(len(ds1.time)) :
-        pdf1, bin_out = np.histogram(ds1.T_2M.isel(time = k).values, bins_T, density = True) 
-        pdf2, bin_out = np.histogram(ds2.T_2M.isel(time = k).values, bins_T, density = True)
-        T_2M.append(np.trapz(np.minimum(pdf1, pdf2), bins_T[1:]))
+        for k in range(len(ds1.time)) :
+            pdf1, bin_out = np.histogram(ds1.T_2M.isel(time = k).values, bins_T, density = True) 
+            pdf2, bin_out = np.histogram(ds2.T_2M.isel(time = k).values, bins_T, density = True)
+            T_2M.append(np.trapz(np.minimum(pdf1, pdf2), bins_T[1:]))
 
-        pdf1, bin_out = np.histogram(ds1.TOT_PR.isel(time = k).values, bins_PR, density = True) 
-        pdf2, bin_out = np.histogram(ds2.TOT_PR.isel(time = k).values, bins_PR, density = True)
-        TOT_PR.append(np.trapz(np.minimum(pdf1, pdf2), bins_PR[1:]))
+            pdf1, bin_out = np.histogram(ds1.TOT_PR.isel(time = k).values, bins_PR, density = True) 
+            pdf2, bin_out = np.histogram(ds2.TOT_PR.isel(time = k).values, bins_PR, density = True)
+            TOT_PR.append(np.trapz(np.minimum(pdf1, pdf2), bins_PR[1:]))
 
-        pdf1, bin_out = np.histogram(ds1.RELHUM_2M.isel(time = k).values, bins_HUM, density = True) 
-        pdf2, bin_out = np.histogram(ds2.RELHUM_2M.isel(time = k).values, bins_HUM, density = True)
-        RELHUM_2M.append(np.trapz(np.minimum(pdf1, pdf2), bins_HUM[1:]))
+            pdf1, bin_out = np.histogram(ds1.RELHUM_2M.isel(time = k).values, bins_HUM, density = True) 
+            pdf2, bin_out = np.histogram(ds2.RELHUM_2M.isel(time = k).values, bins_HUM, density = True)
+            RELHUM_2M.append(np.trapz(np.minimum(pdf1, pdf2), bins_HUM[1:]))
 
-    Variables = {
-        'T_2M':(['time'], T_2M),
-        'RELHUM_2M':(['time'], RELHUM_2M),
-        'TOT_PR':(['time'], TOT_PR)
-    }
-    P_ds = xr.Dataset(Variables, Coordinates)
+        Variables = {
+            'T_2M':(['time'], T_2M),
+            'RELHUM_2M':(['time'], RELHUM_2M),
+            'TOT_PR':(['time'], TOT_PR)
+        }
+        P_ds = xr.Dataset(Variables, Coordinates)
     return P_ds
 
 

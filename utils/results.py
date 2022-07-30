@@ -24,11 +24,11 @@ def get_results(ds1, ds_array, methods) :
         MAE.append(1 - np.mean(err.T_2M.values))
         err = metrics.SSIM(ds1, ds)
         SSIM.append(np.mean(err.T_2M.values))
-        err = metrics.Hellinger(ds1,ds)
-        Hellinger.append(np.mean(err.T_2M.values))
-        err = metrics.Perkins(ds1,ds)
-        Perkins.append(1 - np.mean(err.T_2M.values))
-        
+        err = metrics.Hellinger(ds1, ds, "xarray", 0)
+        Hellinger.append(1 - np.mean(err.T_2M.values))
+        err = metrics.Perkins(ds1, ds, "xarray", 0)
+        Perkins.append(np.mean(err.T_2M.values))
+        # diff =compare_corr()
     
     
     data = {'method': methods,
@@ -36,26 +36,52 @@ def get_results(ds1, ds_array, methods) :
             'MAE': MAE,
             'SSIM': SSIM,
             'Hellinger': Hellinger,
-            'Perkins': Perkins
+            'Perkins': Perkins,
+            'Temporal autocorrelation': diff
     }
     df = pd.DataFrame(data)
     return df
 
-def compare_corr(ds1, ds_array, methods, dim, lag, step):
+def compare_corr(ds1, ds_array, methods, dim, lag, step): # Helinger is not adaptated
     df = metrics.corr(ds1, dim, lag, step)
+    diff = []
     data = []
     data.append(metrics.corr(ds_array[0], dim, lag, step))
     data.append(metrics.corr(ds_array[1], dim, lag, step))
     data.append(metrics.corr(ds_array[2], dim, lag, step))
     
-    figure, axis 0plt.sunplot(len(ds_array),2)
+    figure, axis = plt.subplots(len(ds_array)+1)
     
     for i in range(len(ds_array)):
-        sns.lineplot(data = df, x="lag", y="corr", ax = axis[i,0])
-        sns.lineplot(data = data[i], x="lag", y="corr", ax = axis[i,0])
-        axis[i,0].set_title("Autocorrelation of normal and " method[i])
-        sns.lineplot(data = df, x="lag", y="corr", ax = axis[i,1])
-        sns.lineplot(data = abs(df - data[i])*100, x="lag", y="corr", ax = axis[i,1])
-        axis[i,0].set_title("Difference" method[i])        
+        sns.lineplot(data = df, x="lag", y="corr", ax = axis[i], label = 'real data')
+        sns.lineplot(data = data[i], x="lag", y="corr", ax = axis[i], label = methods[i])
+        axis[i].set_title("Autocorrelation of normal and " + methods[i])
+        
+        c = df.copy()
+        c['corr'] = np.square(df['corr'] - data[i]['corr'])
+        diff.append(c.groupby('lag').mean())
+        print(diff[i])
+        sns.lineplot(data = diff[i], x="lag", y="corr", ax = axis[len(ds_array)], label = methods[i] + ' MSE')
+    
+    axis[len(ds_array)].set_title("MSE")
+    RMSE = [np.mean(val['corr'].values)**1/2 for val in diff]
+    return RMSE
+
+def joint_pdf(ds, ds_array, dim1, dim2):
+    time_dim = len(ds['time'])
+    flat_ds = []
+    flat_method = []
+    
+    flat_ds.append(np.array([ds[dim1].isel(time = k).values.flatten() for k in range(time_dim)]).flatten())
+    flat_ds.append(np.array([ds[dim2].isel(time = k).values.flatten() for k in range(len(time_dim))]).flatten())
+    
+    for method in ds_array:
+        flat_method.append(np.array([method[dim1].isel(time = k).values.flatten() for k in range(time_dim)]).flatten())
+        flat_method.append(np.array([method[dim2].isel(time = k).values.flatten() for k in range(time_dim)]).flatten())
+        
+        
         
     return 0
+
+
+

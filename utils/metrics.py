@@ -152,36 +152,62 @@ def Perkins(ds1, ds2, type, bins = 0) : # Takes two array or xarray ds, with the
     return P_ds
 
 
-def corr(ds, lag, step, dim) : # Takes a ds, the maximum lag for the autocorrelation, the step, and finally the dimension on which the autocorrelation will be calculated
+def corr(ds, lag, dim, pixel_len = 2) : # Takes a ds, the maximum lag for the autocorrelation, the step, and finally the dimension on which the autocorrelation will be calculated
     corr_ds = [1]
     mat= [0]
-    #if(dim == "time") :
-    new_ds = np.array([ds[dim].values[i].flatten() for i in range(len(ds[dim]))])
-    corr = np.corrcoef(new_ds)
-    for i in range(1, lag+1, step) : 
-        for j in range(1, len(new_ds)):
-            if(j < len(new_ds)-i) :
-                corr_ds.append(corr[j+i, j])
-            else :
-                corr_ds.append(corr[j+i-len(new_ds), j])
-            mat.append(i)
+    step = [0, 2, 6, 8, 10, 12, 24, 60, 240, 480, 720] # Distance in km
+    
+    if(dim == "time") :
+        
+        new_ds = np.array([ds[dim].values[i].flatten() for i in range(len(ds[dim]))])
+        corr = np.corrcoef(new_ds)
+        
+        for i in range(1, lag+1) : 
+            
+            for j in range(1, len(new_ds)):
+                
+                if(j < len(new_ds)-i) :
+                    corr_ds.append(corr[j+i, j])
+                    
+                else :
+                    corr_ds.append(corr[j+i-len(new_ds), j])
+                    
+                mat.append(i)
 
-#    if(dim == "rlon") :
-#        lag_ds = [np.array([ds[dim].values[i, :, j:].flatten() for i in range(len(ds[dim].values))]) for j in range(1, lag+1)]
-#        lon_ds = [np.array([ds[dim].values[i, :, :-j].flatten() for i in range(len(ds[dim].values))]) for j in range(1, lag+1)]
-#        for i in range(0, lag, step) : 
-#            for j in range(len(lon_ds[i])):
-#                corr_ds.append(np.corrcoef([lag_ds[i][j], lon_ds[i][j]])[0, 1])
-#                mat.append(i+1)
+                
+    if(dim == "rlon") :
+      #  lag_ds = [np.array([ds[dim].values[i, :, j:].flatten() for i in range(len(ds[dim].values))]) for j in step/pixel_len]
+      #  lon_ds = [np.array([ds[dim].values[i, :, :-j].flatten() for i in range(len(ds[dim].values))]) for j in step/pixel_len]
+        
+        for km in step : 
+            
+            if(km/pixel_len<1):
+                corr_ds.append(None)
+                
+            else:
+                for j in step/pixel_len:
+                    lag_ds = np.array([ds[dim].values[i, j:, :].flatten() for i in range(len(ds[dim].values))])
+                    lat_ds = np.array([ds[dim].values[i, :-j, :].flatten() for i in range(len(ds[dim].values))])
+                    corr_ds.append(np.corrcoef([lag_ds, lon_ds])[0, 1])
+                    mat.append(i+1)
 
-#    if(dim == "rlat") :
-#        lag_ds = [np.array([ds[dim].values[i, j:, :].flatten() for i in range(len(ds[dim].values))]) for j in range(1, lag+1)]
-#        lat_ds = [np.array([ds[dim].values[i, :-j, :].flatten() for i in range(len(ds[dim].values))]) for j in range(1, lag+1)]
-
-#        for i in range(0, lag, step) : 
-#            for j in range(len(lon_ds[i])):
-#                corr_ds.append(np.corrcoef([lag_ds[i][j], lon_ds[i][j]])[0, 1])
-#                mat.append(i+1)
+                
+    if(dim == "rlat") :
+        
+      #  lag_ds = [np.array([ds[dim].values[i, j:, :].flatten() for i in range(len(ds[dim].values))]) for j in step/pixel_len]
+      #  lat_ds = [np.array([ds[dim].values[i, :-j, :].flatten() for i in range(len(ds[dim].values))]) for j in step/pixel_len]
+        
+        for km in step : 
+            
+            if(km/pixel_len<1):
+                corr_ds.append(None)
+                
+            else:
+                for j in step/pixel_len:
+                    lag_ds = np.array([ds[dim].values[i, j:, :].flatten() for i in range(len(ds[dim].values))])
+                    lat_ds = np.array([ds[dim].values[i, :-j, :].flatten() for i in range(len(ds[dim].values))])
+                    corr_ds.append(np.corrcoef([lag_ds, lon_ds])[0, 1])
+                    mat.append(i+1)
                 
     data = {'lag':  mat,
     'corr': corr_ds
@@ -191,14 +217,14 @@ def corr(ds, lag, step, dim) : # Takes a ds, the maximum lag for the autocorrela
     return df
 
 
-def compare_corr(ds1, ds_array, methods, lag, step, dim): # Gives multiple
+def compare_corr(ds1, ds_array, methods, lag, dim, pixel_len): # Gives multiple
     df = corr(ds1, lag, step, dim)
     print("ok")
     diff = []
     data = []
-    data.append(corr(ds_array[0], lag, step, dim))
-    data.append(corr(ds_array[1], lag, step, dim))
-    data.append(corr(ds_array[2], lag, step, dim))
+    data.append(corr(ds_array[0], lag, dim))
+    data.append(corr(ds_array[1], lag, dim))
+    data.append(corr(ds_array[2], lag, dim))
     
     figure, axis = plt.subplots(len(ds_array)+1)
     
@@ -215,6 +241,9 @@ def compare_corr(ds1, ds_array, methods, lag, step, dim): # Gives multiple
     axis[len(ds_array)].set_title("MSE")
     RMSE = [np.mean(val['corr'].values)**1/2 for val in diff]
     return RMSE
+
+
+
 
 
 def multi_plot(ds_array, method, error) :# Here the ds array will have the first ds as the og image, and the other will be the downscaled images

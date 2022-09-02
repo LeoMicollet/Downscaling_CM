@@ -2,7 +2,7 @@ import os
 import numpy as np
 from scipy.interpolate import interpolate
 import xarray as xr
-import xesmf as xe
+#import xesmf as xe
 #, ofile, ingrid, outgrid
 
 def create_grid(lon_min, lon_max, lon_dim, lat_min, lat_max, lat_dim) : # Creates a grid with lat/lon and limits  to the grid (only used for conservative remapping)
@@ -16,11 +16,11 @@ def create_grid(lon_min, lon_max, lon_dim, lat_min, lat_max, lat_dim) : # Create
     )
     return grid
 
-def upscale(ds, ingrid, outgrid) : # Concervative remaping is used (mean between pixels)
-    ups_grid = xe.Regridder(ingrid, outgrid, "conservative")
-    ups = ups_grid(ds)
-    ups = ups.rename({'lon': 'rlon','lat': 'rlat'})
-    return ups
+#def upscale(ds, ingrid, outgrid) : # Concervative remaping is used (mean between pixels)
+#    ups_grid = xe.Regridder(ingrid, outgrid, "conservative")
+#    ups = ups_grid(ds)
+#    ups = ups.rename({'lon': 'rlon','lat': 'rlat'})
+#    return ups
 
 def downscale(in_ds, target_ds, lon_min, lon_max, lon_dim, lat_min, lat_max, lat_dim, new_lon_max, new_lon_dim, new_lat_max, new_lat_dim, interp_type): 
     #target_ds must be a dataset with the dimensions we want, and the same variables. It will be overwritten 

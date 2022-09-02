@@ -30,8 +30,11 @@ def new_dataset(fnames, first_day, last_day) : # Create a new dataset containing
     dataset = xr.concat(sorted_ds, dim='time')
     return dataset
 
-def empty_dataset(ds) : # Creates a dataset full of 0, the same shape as ds
-    empty_ds = xr.full_like(ds, 0)
+def empty_dataset(ds, val) : # Creates a dataset full of 0, the same shape as ds
+    if(val == None):
+        return 0
+    else:
+        empty_ds = xr.full_like(ds, val)
     return empty_ds
 
 def save_dataset(ds, name) : # Saves the dataset

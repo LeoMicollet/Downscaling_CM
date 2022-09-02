@@ -12,5 +12,10 @@ import dataset
 def QS_ti(month):
     filenames = dataset.getfiles()
     for i in month :
-        ds = dataset.newdataset(filenames, i*31, i*31+1)[12]
+        ds = dataset.new_dataset(filenames, i*31, i*31+1)[12]
     return ds
+
+def rescale(ups): #works with an numpy array
+    ups_bis = np.repeat(ups, 6, axis = 1 )
+    ups_bis = np.repeat(ups_bis, 6, axis = 0)
+    return ups_bis

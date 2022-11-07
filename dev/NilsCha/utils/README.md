@@ -1,5 +1,5 @@
 In this folder are useful functions
-# File description
+# Files descriptions
 - data_preparation : these are functions useful to prepare the data, such as converting NetCDF to Numpy
 - dataset : functions concerning the data, such as saving the dataset, get the right training, validation, testing datasets
 - methods :  useful functions

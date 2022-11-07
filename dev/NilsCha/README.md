@@ -1,5 +1,6 @@
-
-# Integration of SRGAN
+# Table of contents
+- [Integration of SRGAN](#1)
+# Integration of SRGAN <a name ="1"><\a>
 ## Ressources
 - [Main UNIL wiki for the cluster](https://wiki.unil.ch/ci/books/service-de-calcul-haute-performance-%28hpc%29)
 - [Physics-Informed Resolution-Enhancing GANs (PhIRE GANs)](https://github.com/NREL/PhIRE)

@@ -9,17 +9,47 @@ import pandas as pd
 import seaborn as sns
 
 
-def RMSE(ds1, ds2) : # Takes two xarray datasets, and returns the RMSE on each dimensions
+def RMSE(ds1, ds2) :
+    """
+    Returns the RMSE on each dimensions for two datasets.
+  
+    Parameters:
+        ds1, ds2: netCDF datasets the same dimension.
+          
+    Returns:
+        ds: dataset containing the RMSE for each dimension.
+    """
+    
     ds = xs.rmse(ds1, ds2, dim = ['rlon','rlat'])
     return ds
 
 
-def MAE(ds1, ds2) :  # Takes two xarray datasets, and returns the MAE on each dimensions
+def MAE(ds1, ds2) :
+    """
+    Returns the MAE on each dimensions for two datasets.
+  
+    Parameters:
+        ds1, ds2: netCDF datasets the same dimension.
+          
+    Returns:
+        ds: dataset containing the MAE for each dimension.
+    """
+    
     ds = xs.mae(ds1, ds2, dim = ['rlon','rlat'])
     return ds
 
 
-def SSIM(ds1, ds2) :  # Takes two xarray datasets, and returns the SSIM on each dimensions
+def SSIM(ds1, ds2) :
+    """
+    Returns the SSIM on each dimensions for two datasets.
+  
+    Parameters:
+        ds1, ds2: netCDF datasets the same dimension.
+          
+    Returns:
+        ds: dataset containing the SSIM for each dimension.
+    """
+    
     Coordinates = {
         'time':(['time'], ds1.time.values)
     } 
@@ -41,7 +71,17 @@ def SSIM(ds1, ds2) :  # Takes two xarray datasets, and returns the SSIM on each 
     return SSIM_ds
 
 
-def discrete_Hellinger(ds1, ds2) : # Returns the discrete version of the Hellinger distance
+def discrete_Hellinger(ds1, ds2) : # useless, the Hellinger function is more precise
+    """
+    Returns the discrete Hellinger distance for each dimensions for two datasets.
+  
+    Parameters:
+        ds1, ds2: netCDF datasets the same dimension.
+          
+    Returns:
+        ds: dataset containing the discrete Hellinger distance for each dimension.
+    """
+    
     Coordinates = {
         'time':(['time'], ds1.time.values)
     } 
@@ -65,7 +105,19 @@ def discrete_Hellinger(ds1, ds2) : # Returns the discrete version of the Helling
     return H_ds
 
 
-def Hellinger(ds1,ds2, ds_type, bins = 0) : # Takes two array or xarray ds, with the binning if ds is an array. Returns the discrete version of the Hellinger distance for each dimension using the pdfs
+def Hellinger(ds1,ds2, ds_type, bins = 0) :
+    """
+    Returns the discrete version of Hellinger distance using the pdfs for each dimensions for two datasets.
+  
+    Parameters:
+        ds1, ds2: datasets the same dimension.
+        
+        ds_type: gives the type of the datasets (xarray or arrays).
+          
+    Returns:
+        ds: dataset containing the discrete Hellinger distance for each dimension.
+    """
+    
     if(ds_type == "array"):
         pdf1, bin_out = np.histogram(ds1, bins, density = True) 
         pdf2, bin_out = np.histogram(ds2, bins, density = True)
@@ -109,8 +161,20 @@ def Hellinger(ds1,ds2, ds_type, bins = 0) : # Takes two array or xarray ds, with
     return H_ds
 
 
-def Perkins(ds1, ds2, type, bins = 0) : # Takes two array or xarray ds, with the binning if ds is an array.Returns the discrete version of the Perkins score for each dimension using the pdfs
-    if(type == "array"):
+def Perkins(ds1, ds2, ds_type, bins = 0) : # Takes two array or xarray ds, with the binning if ds is an array.Returns the discrete version of the Perkins score for each dimension using the pdfs
+    """
+    Returns the discrete version of the Perkins score using the pdfs for each dimensions for two datasets.
+  
+    Parameters:
+        ds1, ds2: datasets the same dimension.
+        
+        ds_type: gives the type of the datasets (xarray or arrays).
+          
+    Returns:
+        ds: dataset containing the discrete Perkins score for each dimension.
+    """
+    
+    if(ds_type == "array"):
         norm_ds1 = ds1/np.trapz(ds1, bins)
         norm_ds2 = ds2/np.trapz(ds1, bins)
    #     pdf1, bin_out = np.histogram(ds1, bins, density = True) 
@@ -118,7 +182,7 @@ def Perkins(ds1, ds2, type, bins = 0) : # Takes two array or xarray ds, with the
         P_ds = np.trapz(np.minimum(norm_ds1, norm_ds2), bins)
         
         
-    if(type == "xarray"):
+    if(ds_type == "xarray"):
         Coordinates = {
             'time':(['time'], ds1.time.values)
         } 
@@ -152,7 +216,25 @@ def Perkins(ds1, ds2, type, bins = 0) : # Takes two array or xarray ds, with the
     return P_ds
 
 
-def corr(ds, lag, dim, axis, pixel_len = 2) : # Takes a ds, the maximum lag for the autocorrelation, the step, and finally the dimension on which the autocorrelation will be calculated
+def corr(ds, lag, dim, axis, pixel_len = 2) :
+    """
+    Returns the autocorrelation of a dataset for a given dimension.
+  
+    Parameters:
+        ds: input dataset.
+        
+        lag: lag used for the time dimension only.
+        
+        dim: dimension on which the autocorrelation will be calculated.
+        
+        axis: rlon or rlat.
+        
+        pixel_len: pixel length. 2 is for the 2km image. for the upscaled values, pixel_len should be 12.
+          
+    Returns:
+        df: dataset containing the autocorrelation values for each lag.
+    """
+    
     corr_ds = []
     mat= []
     step = [0, 2, 6, 8, 10, 12, 24, 60, 240, 480, 720] # Distance in km
@@ -173,7 +255,6 @@ def corr(ds, lag, dim, axis, pixel_len = 2) : # Takes a ds, the maximum lag for 
                     corr_ds.append(corr[j+i-len(new_ds), j])
                     
                 mat.append(i)
-
                 
     if(axis == "rlon") :
       #  lag_ds = [np.array([ds[dim].values[i, :, j:].flatten() for i in range(len(ds[dim].values))]) for j in step/pixel_len]
@@ -223,6 +304,24 @@ def corr(ds, lag, dim, axis, pixel_len = 2) : # Takes a ds, the maximum lag for 
 
 
 def compare_corr(ds1, ds_array, methods, axs, lag, dim, pixel_len): # Gives multiple
+    """
+    Returns the autocorrelation of a dataset for a given dimension.
+  
+    Parameters:
+        ds: input dataset.
+        
+        lag: lag used for the time dimension only.
+        
+        dim: dimension on which the autocorrelation will be calculated.
+        
+        axis: rlon or rlat.
+        
+        pixel_len: pixel length. 2 is for the 2km image. for the upscaled values, pixel_len should be 12.
+          
+    Returns:
+        df: dataset containing the autocorrelation values for each lag.
+    """
+    
     df = corr(ds1, lag, dim, axs)
     print("ok")
     diff = []

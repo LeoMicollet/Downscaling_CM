@@ -11,6 +11,26 @@ import seaborn as sns
 import metrics
 
 def get_results(ds1, upscaled, ds_array, methods, dim, pixel_len) :
+    """
+    Returns the results for the chosen metrics.
+    
+    Parameters:
+        ds1: input dataset.
+        
+        upscaled: upscaled dataset.
+        
+        ds_array: Array containing the downscaled datasets.
+        
+        methods: Array containing the name of each methods.
+        
+        dim: Dimension on which the autocorrelation will be calculated.
+        
+        pixel_len: Pixel length. 2 is for the 2km image. for the upscaled values, pixel_len should be 12.
+          
+    Returns:
+        df: dataset containing the autocorrelation values for each lag.
+    """
+    
     RMSE = []
     MAE = []
     SSIM = []
@@ -49,10 +69,3 @@ def get_results(ds1, upscaled, ds_array, methods, dim, pixel_len) :
     df = pd.DataFrame(data)
     df["mean"] = df.mean(axis=1)
     return df
-
-
-
-
-
-
-
